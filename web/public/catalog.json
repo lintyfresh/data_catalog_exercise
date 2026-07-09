@@ -1,0 +1,237 @@
+[
+  {
+    "path": "bronze/orders_raw/orders_bronze.csv",
+    "kind": "file",
+    "format": "csv",
+    "schema": {
+      "order_id": "int64",
+      "order_date": "str",
+      "customer_id": "str",
+      "product_id": "str",
+      "category": "str",
+      "state": "str",
+      "channel": "str",
+      "payment_type": "str",
+      "qty": "int64",
+      "price": "float64",
+      "discount": "float64",
+      "fulfilled": "bool",
+      "shipping_days": "float64",
+      "_raw_source_file": "str"
+    }
+  },
+  {
+    "path": "silver/marketing/marketing_campaigns",
+    "kind": "delta",
+    "format": "delta",
+    "schema": {
+      "campaign_id": "string",
+      "name": "string",
+      "channel": "string",
+      "start_date": "string",
+      "end_date": "string",
+      "budget": "double"
+    },
+    "history": [
+      {
+        "version": 0,
+        "operation": "WRITE",
+        "timestamp": "2026-06-03 12:00:00"
+      }
+    ]
+  },
+  {
+    "path": "silver/marketing/reviews",
+    "kind": "delta",
+    "format": "delta",
+    "schema": {
+      "review_id": "string",
+      "product_sku": "string",
+      "rating": "long",
+      "review_text": "string",
+      "review_date": "string"
+    },
+    "history": [
+      {
+        "version": 0,
+        "operation": "WRITE",
+        "timestamp": "2026-06-24 12:00:00"
+      }
+    ]
+  },
+  {
+    "path": "silver/ops/inventory",
+    "kind": "delta",
+    "format": "delta",
+    "schema": {
+      "product_id": "string",
+      "warehouse": "string",
+      "quantity_on_hand": "long",
+      "last_restock_date": "string"
+    },
+    "history": [
+      {
+        "version": 0,
+        "operation": "WRITE",
+        "timestamp": "2026-06-08 12:00:00"
+      }
+    ]
+  },
+  {
+    "path": "silver/ops/returns",
+    "kind": "delta",
+    "format": "delta",
+    "schema": {
+      "return_id": "string",
+      "cust_id": "string",
+      "order_id": "long",
+      "return_date": "string",
+      "reason": "string",
+      "refund_amount": "double"
+    },
+    "history": [
+      {
+        "version": 0,
+        "operation": "WRITE",
+        "timestamp": "2026-06-26 12:00:00"
+      }
+    ]
+  },
+  {
+    "path": "silver/ops/shipments",
+    "kind": "delta",
+    "format": "delta",
+    "schema": {
+      "shipment_id": "string",
+      "order_id": "long",
+      "carrier": "string",
+      "ship_date": "string",
+      "delivery_date": "string",
+      "status": "string"
+    },
+    "history": [
+      {
+        "version": 1,
+        "operation": "WRITE",
+        "timestamp": "2026-06-29 12:00:00"
+      },
+      {
+        "version": 0,
+        "operation": "WRITE",
+        "timestamp": "2026-06-21 12:00:00"
+      }
+    ]
+  },
+  {
+    "path": "silver/sales/customers",
+    "kind": "delta",
+    "format": "delta",
+    "schema": {
+      "customer_id": "string",
+      "name": "string",
+      "signup_date": "string",
+      "region": "string",
+      "tier": "string"
+    },
+    "history": [
+      {
+        "version": 1,
+        "operation": "WRITE",
+        "timestamp": "2026-07-02 12:00:00"
+      },
+      {
+        "version": 0,
+        "operation": "WRITE",
+        "timestamp": "2026-06-18 12:00:00"
+      }
+    ]
+  },
+  {
+    "path": "silver/sales/orders",
+    "kind": "delta",
+    "format": "delta",
+    "schema": {
+      "order_id": "long",
+      "order_date": "string",
+      "customer_id": "string",
+      "product_id": "string",
+      "category": "string",
+      "state": "string",
+      "channel": "string",
+      "payment_type": "string",
+      "qty": "long",
+      "price": "double",
+      "discount": "double",
+      "fulfilled": "boolean",
+      "shipping_days": "double",
+      "discount_code": "string"
+    },
+    "history": [
+      {
+        "version": 4,
+        "operation": "DELETE",
+        "timestamp": "2026-07-08 12:00:00"
+      },
+      {
+        "version": 3,
+        "operation": "UPDATE",
+        "timestamp": "2026-07-06 12:00:00"
+      },
+      {
+        "version": 2,
+        "operation": "WRITE",
+        "timestamp": "2026-07-03 12:00:00"
+      },
+      {
+        "version": 1,
+        "operation": "WRITE",
+        "timestamp": "2026-06-30 12:00:00"
+      },
+      {
+        "version": 0,
+        "operation": "WRITE",
+        "timestamp": "2026-06-28 12:00:00"
+      }
+    ]
+  },
+  {
+    "path": "silver/sales/orders_legacy",
+    "kind": "delta",
+    "format": "delta",
+    "schema": {
+      "order_id": "long",
+      "order_date": "string",
+      "customer_id": "string",
+      "product_id": "string",
+      "qty": "long",
+      "price": "double",
+      "fulfilled": "boolean"
+    },
+    "history": [
+      {
+        "version": 0,
+        "operation": "WRITE",
+        "timestamp": "2026-05-24 12:00:00"
+      }
+    ]
+  },
+  {
+    "path": "silver/sales/products",
+    "kind": "delta",
+    "format": "delta",
+    "schema": {
+      "product_id": "string",
+      "category": "string",
+      "brand": "string",
+      "unit_cost": "double",
+      "list_price": "double"
+    },
+    "history": [
+      {
+        "version": 0,
+        "operation": "WRITE",
+        "timestamp": "2026-06-13 12:00:00"
+      }
+    ]
+  }
+]
