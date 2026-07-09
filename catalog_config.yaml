@@ -1,0 +1,148 @@
+# Semantic layer for the data catalog.
+#
+# Human-authored, plain-English descriptions of what each table and column
+# MEANS -- the semantics that column names and dtypes cannot express. Consumed
+# by the catalog app (for humans) and by export_dictionary() (for AI agents).
+#
+# Keyed by the scanner's relative `path` (unique + stable). Tables/columns left
+# out are fine: the code degrades to a null description, it does not error.
+# Only columns that actually exist in a table's scanned schema are shown.
+
+tables:
+  bronze/orders_raw/orders_bronze.csv:
+    description: >-
+      Raw, unprocessed order-line dump as ingested from the source system.
+      Bronze layer: no cleaning or type enforcement. The cleaned, canonical
+      version is silver/sales/orders. Prefer the silver table for analysis.
+    columns:
+      order_id: "Order-line identifier. Same concept as silver/sales/orders.order_id."
+      order_date: "Date the order was placed (raw string, not yet typed)."
+      customer_id: "Who placed the order. Joins to silver/sales/customers.customer_id."
+      product_id: "What was bought. Joins to silver/sales/products.product_id."
+      category: "Product category, copied onto the order line."
+      state: "US state the order ships to (2-letter code) -- NOT an order status."
+      channel: "Sales channel the order came through (e.g. web, mobile, store)."
+      payment_type: "How the customer paid (e.g. card, paypal)."
+      qty: "Quantity of the product on this line."
+      price: "Unit price at time of sale, before discount."
+      discount: "Discount amount applied to this line (currency, not a rate)."
+      fulfilled: "Whether the order line was fulfilled."
+      shipping_days: "Days from order to shipment."
+      _raw_source_file: "Ingestion artifact: source filename this row came from. Bronze-only; dropped in silver."
+
+  silver/sales/orders:
+    description: >-
+      Cleaned order-line transactions -- one row per product line within an
+      order. The canonical sales fact table. Derived from
+      bronze/orders_raw. Supersedes silver/sales/orders_legacy.
+    columns:
+      order_id: "Order-line identifier (the grain of this table). Referenced by shipments.order_id and returns.order_id."
+      order_date: "Date the order was placed (ISO string)."
+      customer_id: "FK to silver/sales/customers.customer_id. Same concept as returns.cust_id (note the different name there)."
+      product_id: "FK to silver/sales/products.product_id."
+      category: "Product category at time of sale."
+      state: "US state the order ships to (2-letter code) -- NOT an order status."
+      channel: "Sales channel (e.g. web, mobile, store)."
+      payment_type: "Payment method used."
+      qty: "Quantity of the product on this line."
+      price: "Unit price at time of sale, before discount."
+      discount: "Discount amount applied (currency amount, not a percentage)."
+      fulfilled: "Whether the order line was fulfilled."
+      shipping_days: "Days from order to shipment."
+      discount_code: "Promo code applied, if any. Added in a later version; absent from orders_legacy and the bronze dump."
+
+  silver/sales/orders_legacy:
+    description: >-
+      DEPRECATED older orders table, kept for historical comparison. Narrower
+      schema than silver/sales/orders (no category/state/channel/discount_code).
+      Do not use for new analysis -- use silver/sales/orders.
+    columns:
+      order_id: "Order-line identifier. Same concept as silver/sales/orders.order_id."
+      order_date: "Date the order was placed (ISO string)."
+      customer_id: "FK to silver/sales/customers.customer_id."
+      product_id: "FK to silver/sales/products.product_id."
+      qty: "Quantity ordered."
+      price: "Unit price at time of sale."
+      fulfilled: "Whether the order was fulfilled."
+
+  silver/sales/customers:
+    description: >-
+      Customer profile dimension -- one row per customer. The canonical source
+      of customer attributes. customer_id is the join key used across orders,
+      and (under the alias cust_id) returns.
+    columns:
+      customer_id: "Primary key. Referenced as customer_id in orders and as cust_id in returns."
+      name: "Customer display name."
+      signup_date: "Date the customer account was created (ISO string)."
+      region: "Broad geographic region (coarser than a US state)."
+      tier: "Customer loyalty/value tier (e.g. bronze, silver, gold)."
+
+  silver/sales/products:
+    description: >-
+      Product catalog dimension -- one row per product. Canonical source of
+      product attributes and cost/price. product_id is the join key; note that
+      reviews refers to the same product by product_sku.
+    columns:
+      product_id: "Primary key. Same concept as reviews.product_sku (different name there)."
+      category: "Product category."
+      brand: "Product brand."
+      unit_cost: "What the product costs the company (COGS), per unit."
+      list_price: "Catalog list price, per unit (before any order-level discount)."
+
+  silver/ops/inventory:
+    description: >-
+      Stock levels per product per warehouse -- one row per product/warehouse
+      pair. A point-in-time snapshot, not a time series.
+    columns:
+      product_id: "FK to silver/sales/products.product_id."
+      warehouse: "Warehouse identifier holding the stock."
+      quantity_on_hand: "Units currently in stock at this warehouse."
+      last_restock_date: "Date this product was last restocked at this warehouse."
+
+  silver/ops/shipments:
+    description: >-
+      Shipment tracking -- one row per shipment. Links to an order via
+      order_id and records carrier and ship/delivery timing.
+    columns:
+      shipment_id: "Primary key for the shipment."
+      order_id: "FK to silver/sales/orders.order_id."
+      carrier: "Shipping carrier (e.g. ups, fedex)."
+      ship_date: "Date the shipment left the warehouse (ISO string)."
+      delivery_date: "Date the shipment was delivered; may be blank if in transit."
+      status: "Shipment status (e.g. in_transit, delivered) -- this IS a status field, unlike orders.state."
+
+  silver/ops/returns:
+    description: >-
+      Returned orders -- one row per return. Records why an order came back and
+      the refund issued.
+    columns:
+      return_id: "Primary key for the return."
+      cust_id: "The returning customer. Same concept as customer_id elsewhere -- FK to silver/sales/customers.customer_id."
+      order_id: "The order being returned. FK to silver/sales/orders.order_id."
+      return_date: "Date the return was recorded (ISO string)."
+      reason: "Free-text/coded reason the item was returned."
+      refund_amount: "Amount refunded to the customer (currency)."
+
+  silver/marketing/marketing_campaigns:
+    description: >-
+      Marketing campaign metadata -- one row per campaign. Describes channel,
+      run dates, and budget. No direct FK to orders in this sample.
+    columns:
+      campaign_id: "Primary key for the campaign."
+      name: "Human-readable campaign name."
+      channel: "Marketing channel (e.g. email, social, search)."
+      start_date: "Campaign start date (ISO string)."
+      end_date: "Campaign end date (ISO string)."
+      budget: "Total campaign budget (currency)."
+
+  silver/marketing/reviews:
+    description: >-
+      Customer product reviews -- one row per review. Star rating plus free-text.
+      Links to a product via product_sku (the same concept as product_id
+      elsewhere).
+    columns:
+      review_id: "Primary key for the review."
+      product_sku: "The reviewed product. Same concept as product_id -- FK to silver/sales/products.product_id."
+      rating: "Star rating given by the customer (integer scale)."
+      review_text: "Free-text review body."
+      review_date: "Date the review was submitted (ISO string)."

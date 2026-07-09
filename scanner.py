@@ -8,6 +8,7 @@ schema. Paths are shown relative to the data root.
 Usage: python scanner.py [data_root] [--json]   (default root: sample_lakehouse)
 """
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,16 +19,20 @@ from deltalake import DeltaTable
 DATA_EXTS = {".csv", ".json", ".parquet"}
 
 
-def find_assets(root: Path):
-    """Yield (path, kind) for every Delta table dir or plain data file under root."""
-    if (root / "_delta_log").is_dir():
-        yield root, "delta"
-        return  # a Delta table's part-files and logs are one asset, don't descend
-    for p in sorted(root.iterdir()):
-        if p.is_dir():
-            yield from find_assets(p)
-        elif p.suffix.lower() in DATA_EXTS:
-            yield p, "file"
+def find_assets(root: Path) -> list[tuple[Path, str]]:
+    """List every Delta table dir or plain data file under root as (path, kind)."""
+    assets = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        d = Path(dirpath)
+        if "_delta_log" in dirnames:
+            assets.append((d, "delta"))
+            dirnames.clear()  # a Delta table's part-files and logs are one asset
+            continue
+        dirnames.sort()  # deterministic walk order
+        for name in sorted(filenames):
+            if Path(name).suffix.lower() in DATA_EXTS:
+                assets.append((d / name, "file"))
+    return assets
 
 
 def file_schema(path: Path) -> dict:
