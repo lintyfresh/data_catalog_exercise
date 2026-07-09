@@ -39,6 +39,17 @@ assets = enrich(scan("sample_lakehouse"), load_config())
 `catalog_config.yaml` is keyed by asset path; edit it to document tables/columns.
 Undocumented assets are fine — they get a null description, not an error.
 
+## Web UI
+
+A local React app (Vite) for browsing the catalog: asset list with filter,
+schema tables, and full Delta commit history. It reads a static
+`web/public/catalog.json` produced by the scanner — no backend.
+
+```bash
+cd web && npm install && npm run dev                        # http://localhost:5173
+python scanner.py --json > web/public/catalog.json          # regenerate after a rescan
+```
+
 ## Setup
 
 ```bash

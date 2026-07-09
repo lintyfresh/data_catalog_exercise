@@ -5,8 +5,9 @@ Delta tables (folders containing _delta_log) show their current schema and
 full commit history; plain csv/json/parquet files show a pandas-inferred
 schema. Paths are shown relative to the data root.
 
-Usage: python scanner.py [data_root]   (default: sample_lakehouse)
+Usage: python scanner.py [data_root] [--json]   (default root: sample_lakehouse)
 """
+import json
 import os
 import sys
 from datetime import datetime, timezone
@@ -99,7 +100,12 @@ def print_catalog(assets: list[dict]) -> None:
 
 
 if __name__ == "__main__":
-    root = Path(sys.argv[1] if len(sys.argv) > 1 else "sample_lakehouse")
+    args = [a for a in sys.argv[1:] if a != "--json"]
+    root = Path(args[0] if args else "sample_lakehouse")
     if not root.is_dir():
         sys.exit(f"data root not found: {root}")
-    print_catalog(scan(root))
+    assets = scan(root)
+    if "--json" in sys.argv:
+        print(json.dumps(assets, indent=2))
+    else:
+        print_catalog(assets)
